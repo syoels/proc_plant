@@ -2,12 +2,10 @@ import pymel.core as pm
 import random
 import math
 import numpy as np
-import os
 
-from general_utils import try_deleting
 from proc_plant.math_utils import mapFromTo
 from consts import MTL_NAME
-from proc_plant.maya_utils import assign_mtl_from_resources
+from proc_plant.maya_utils import try_deleting, assign_mtl_from_resources
 
 
 class Plant(object):
@@ -80,9 +78,8 @@ class Plant(object):
             pm.rotate(cone_name, [0, y_rotation, 0])
 
         # assign plant material
-        assign_mtl_from_resources(["cone_*", "pole"], MTL_NAME)
-
         plant = pm.polyUnite("cone_*", "pole", n="plant")
+        assign_mtl_from_resources(["plant"], MTL_NAME)
         pm.delete(plant, constructionHistory=True)
 
         print("Creating joints & skin...")
