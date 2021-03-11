@@ -8,20 +8,20 @@ from consts import MTL_NAME
 from proc_plant.maya_utils import try_deleting, assign_mtl_from_resources
 
 
-class Plant(object):
+class Breed(object):
     
-    def __init__(self, name, plant_height=200, pole_radius=1.5, cones_num=1000, cones_to_complete_circle=150,
-                 jnts_num=100, min_height_ratio=1.5, max_height_ratio=6, min_radius=0.4, max_radius=0.7,
+    def __init__(self, breed_name, plant_height=200, pole_radius=1.5, cones_num=1000, cones_to_complete_circle=150,
+                 jnts_num=100, min_height=1.5, max_height=6, min_radius=0.4, max_radius=0.7,
                  min_rotation=0.0, max_rotation=30.0, rotation_range=10, delete_joints=True):
-        self.name = name
+        self.breed_name = breed_name
         self.pole_name = "pole"
         self.plant_height = plant_height
         self.pole_radius = pole_radius
         self.cones_num = cones_num
         self.cones_to_complete_circle = cones_to_complete_circle
         self.jnts_num = jnts_num
-        self.min_height_ratio = min_height_ratio
-        self.max_height_ratio = max_height_ratio
+        self.min_height = min_height
+        self.max_height = max_height
         self.min_radius = min_radius
         self.max_radius = max_radius
         self.min_rotation = min_rotation
@@ -30,14 +30,14 @@ class Plant(object):
         self.delete_joints = delete_joints
 
         print("Cleaning old plants leftovers...")
-        try_deleting(["cone_*", "plant", "pole", "Cant delete pole", "plant_jnt_*"])
+        clear_plant_leftovers()
 
         self.cones_height = self.plant_height * 0.9
         self.height_step = self.cones_height / self.cones_num
         self.xz_step = self.cones_to_complete_circle / 1.0
         self.joint_height_step = float(self.plant_height) / self.jnts_num
 
-    def draw_plant(self):
+    def draw_breed_instance(self, instance_name=""):
         # Create pole
         print("Creating stem...")
         c = pm.polyCylinder(
@@ -61,21 +61,21 @@ class Plant(object):
             x = math.sin(xz_index * self.xz_step) * self.pole_radius
             z = math.cos(xz_index * self.xz_step) * self.pole_radius
             y = cone_height + (random.random() - 0.5) / 2.0
-            y_rotation = math.degrees(math.atan2(x, z)) - 90
 
             # random radius & ratio
-            height_ratio = random.uniform(self.min_height_ratio, self.max_height_ratio)
+            height = random.uniform(self.min_height, self.max_height)
             radius = random.uniform(self.min_radius, self.max_radius)
 
             # spawn cone and move/rotate
-            cone = pm.cone(constructionHistory=True,
-                           radius=radius,
-                           heightRatio=height_ratio,
-                           polygon=True,
-                           name=cone_name)
+            cone = pm.polyCone(constructionHistory=True,
+                               radius=radius,
+                               height=height,
+                               sx=12,
+                               sy=2,
+                               name=cone_name)
 
             pm.move(cone_name, [x, y, z])
-            pm.rotate(cone_name, [0, y_rotation, 0])
+            pm.rotate(cone_name, [90, 0, 0])
 
         # assign plant material
         plant = pm.polyUnite("cone_*", "pole", n="plant")
@@ -106,28 +106,34 @@ class Plant(object):
         if self.delete_joints:
             pm.delete("plant", constructionHistory=True)
             try_deleting("plant_jnt_*")
-        pm.rename("plant", self.name)
-        print("%s Created!" % self.name)
+        full_instance_name = "%s_%s" % (self.breed_name, instance_name)
+        pm.rename("plant", full_instance_name)
+        print("%s Created!" % full_instance_name)
 
 
-def draw_plants(n=2):
+def clear_plant_leftovers():
+    try_deleting(["pole*", "cone_*", "plant", "pole", "plant_jnt_*"])
+
+
+def draw_breed_multiple_instances(breed_name="spikey", n=2):
     for i in range(n):
         plant_height = np.random.normal(150, 50)
         pole_radius = np.random.normal(1.2, 0.25)
         cones_num = int(np.random.normal(800, 100))
         cones_to_complete_circle = int(np.random.normal(120, 20))
         jnts_num = int(plant_height // 2)
-        min_height_ratio = np.random.normal(1.5, 1.0)
-        max_height_ratio = np.random.normal(7, 4.0)
+        min_height = np.random.normal(1.5, 1.0)
+        max_height = np.random.normal(7, 4.0)
         min_radius = np.random.normal(0.4, 0.1)
         max_radius = np.random.normal(0.7, 0.1)
         min_rotation = np.random.normal(0.0, 10.0)
         max_rotation = np.random.normal(25.0, 1.0)
         rotation_range = np.random.normal(15.0, 10.0)
 
-        plant = Plant("spikey", plant_height=plant_height, pole_radius=pole_radius, cones_num=cones_num,
+        breed = Breed(breed_name=breed_name, plant_height=plant_height, pole_radius=pole_radius, cones_num=cones_num,
                       cones_to_complete_circle=cones_to_complete_circle, jnts_num=jnts_num,
-                      min_height_ratio=min_height_ratio, max_height_ratio=max_height_ratio, min_radius=min_radius,
+                      min_height=min_height, max_height=max_height, min_radius=min_radius,
                       max_radius=max_radius, min_rotation=min_rotation, max_rotation=max_rotation,
                       rotation_range=rotation_range)
-        plant.draw_plant()
+
+        breed.draw_breed_instance(instance_name=i)

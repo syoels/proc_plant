@@ -31,15 +31,15 @@ def assign_mtl_from_resources(obj_names, mtl_name, include_displacement=True):
     if "." in mtl_name:
         mtl_name = mtl_name.split(".")[-2]
 
-    mtl_name = "%s:%s" % (MTL_NS, mtl_name)
+    mtl_full_name = "%s:%s" % (MTL_NS, mtl_name)
 
-    if not pm.objExists(mtl_name):
+    if not pm.objExists(mtl_name) and not pm.objExists(mtl_full_name):
         base_dir = get_project_root_dir()
         mtl_path = os.path.join(base_dir, "resources", "%s.ma" % mtl_name)
         print('loading mtl from %s' % mtl_path)
         pm.importFile(mtl_path, namespace=MTL_NS)
 
-    mtl = pm.PyNode(mtl_name)
+    mtl = pm.PyNode(mtl_full_name)
 
     print("Assigning shader...")
     for name in obj_names:
