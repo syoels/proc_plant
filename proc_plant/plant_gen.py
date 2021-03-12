@@ -116,24 +116,27 @@ def clear_plant_leftovers():
 
 
 def draw_breed_multiple_instances(breed_name="spikey", n=2):
+    kwargs = get_sample_breed_kwargs()
+    kwargs['breed_name'] = breed_name
+    breed = Breed(**kwargs)
     for i in range(n):
-        plant_height = np.random.normal(150, 50)
-        pole_radius = np.random.normal(1.2, 0.25)
-        cones_num = int(np.random.normal(800, 100))
-        cones_to_complete_circle = int(np.random.normal(120, 20))
-        jnts_num = int(plant_height // 2)
-        min_height = np.random.normal(1.5, 1.0)
-        max_height = np.random.normal(7, 4.0)
-        min_radius = np.random.normal(0.4, 0.1)
-        max_radius = np.random.normal(0.7, 0.1)
-        min_rotation = np.random.normal(0.0, 10.0)
-        max_rotation = np.random.normal(25.0, 1.0)
-        rotation_range = np.random.normal(15.0, 10.0)
-
-        breed = Breed(breed_name=breed_name, plant_height=plant_height, pole_radius=pole_radius, cones_num=cones_num,
-                      cones_to_complete_circle=cones_to_complete_circle, jnts_num=jnts_num,
-                      min_height=min_height, max_height=max_height, min_radius=min_radius,
-                      max_radius=max_radius, min_rotation=min_rotation, max_rotation=max_rotation,
-                      rotation_range=rotation_range)
-
         breed.draw_breed_instance(instance_name=i)
+
+
+def get_sample_breed_kwargs():
+    return {
+        'breed_name': 'sample_breed',
+        'plant_height': np.random.normal(150, 50),
+        'pole_radius': np.random.normal(1.2, 0.25),
+        'cones_num': int(np.random.normal(800, 100)),
+        'cones_to_complete_circle': int(np.random.normal(120, 20)),
+        'jnts_num': int(np.random.normal(150, 50) // 2),
+        'min_height': np.random.normal(1.5, 1.0),
+        'max_height': np.random.normal(7, 4.0),
+        'min_radius': np.random.normal(0.4, 0.1),
+        'max_radius': np.random.normal(0.7, 0.1),
+        'min_rotation': np.random.normal(0.0, 10.0),
+        'max_rotation': np.random.normal(25.0, 1.0),
+        'rotation_range': np.random.normal(15.0, 10.0)
+    }
+
