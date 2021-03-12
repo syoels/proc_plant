@@ -115,7 +115,7 @@ def clear_plant_leftovers():
     try_deleting(["pole*", "cone_*", "plant", "pole", "plant_jnt_*"])
 
 
-def draw_breed_multiple_instances(breed_name="spikey", n=2):
+def create_sample_breed_and_draw_multiple_instances(breed_name="spikey", n=2):
     kwargs = get_sample_breed_kwargs()
     kwargs['breed_name'] = breed_name
     breed = Breed(**kwargs)
