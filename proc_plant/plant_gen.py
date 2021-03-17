@@ -104,15 +104,15 @@ class Breed(object):
                                name=cone_name)
 
             pm.move(cone_name, [x, y, z])
-            pm.rotate(cone_name, [90, 0, 90])
+            pm.rotate(cone_name, [0, 0, 0])
         self._mark_stage_completed(instance_name, "cones")
 
     def _assign_instance_material(self, instance_name):
         self._assert_prequisites_completed(instance_name, "mtl")
 
+        assign_mtl_from_resources(["pole"], MTL_NAME)
         plant = pm.polyUnite("cone_*", "pole", n="plant")
         self.instances[instance_name]['mesh'] = plant
-        assign_mtl_from_resources(["plant"], MTL_NAME)
         pm.delete(plant, constructionHistory=True)
 
         self._mark_stage_completed(instance_name, "mtl")

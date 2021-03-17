@@ -43,11 +43,13 @@ def assign_mtl_from_resources(obj_names, mtl_name, include_displacement=True):
     mtl = pm.PyNode(mtl_full_name)
 
     print("Assigning shader...")
-    for name in obj_names:
-        plant_sg_name = mtl.shadingGroups()[0].name()
-        mc.sets(name, e=True, forceElement=plant_sg_name)
-        if include_displacement:
-            set_arnold_displacement_attrs(name)
+    for selection_string in obj_names:
+        for obj in pm.ls(selection_string):
+            name = obj.name()
+            plant_sg_name = mtl.shadingGroups()[0].name()
+            mc.sets(name, e=True, forceElement=plant_sg_name)
+            if include_displacement:
+                set_arnold_displacement_attrs(name)
 
 
 def set_arnold_displacement_attrs(obj_name, subdiv_type=SUBDIV_CATCLARK, ai_subdiv_iterations=3, should_auto_bump=True):
