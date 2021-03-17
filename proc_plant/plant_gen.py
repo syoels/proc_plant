@@ -237,6 +237,6 @@ def get_sample_breed_kwargs():
         'max_radius': np.random.normal(0.7, 0.1),
         'min_rotation': np.random.normal(0.0, 10.0),
         'max_rotation': np.random.normal(25.0, 1.0),
-        'rotation_range': np.random.normal(15.0, 10.0)
+        'rotation_range': max(np.random.normal(15.0, 10.0), 0)
     }
 

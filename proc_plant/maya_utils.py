@@ -1,5 +1,6 @@
 import os
 import pymel.core as pm
+import maya.cmds as mc
 from proc_plant.general_utils import get_project_root_dir
 from proc_plant.consts import MTL_NS, SUBDIV_CATCLARK
 
@@ -43,11 +44,10 @@ def assign_mtl_from_resources(obj_names, mtl_name, include_displacement=True):
 
     print("Assigning shader...")
     for name in obj_names:
-        sg = pm.PyNode(name).shadingGroups()[0]
+        plant_sg_name = mtl.shadingGroups()[0].name()
+        mc.sets(name, e=True, forceElement=plant_sg_name)
         if include_displacement:
             set_arnold_displacement_attrs(name)
-        # Connect the output of the material to the input on the shading group
-        pm.connectAttr((mtl.name() + ".outColor"), (sg.name() + ".surfaceShader"), force=True)
 
 
 def set_arnold_displacement_attrs(obj_name, subdiv_type=SUBDIV_CATCLARK, ai_subdiv_iterations=3, should_auto_bump=True):
