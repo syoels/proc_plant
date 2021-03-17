@@ -13,6 +13,7 @@ class Breed(object):
     def __init__(self, breed_name, plant_height=200, pole_radius=1.5, cones_num=1000, cones_to_complete_circle=150,
                  jnts_num=100, min_height=1.5, max_height=6, min_radius=0.4, max_radius=0.7,
                  min_rotation=0.0, max_rotation=30.0, rotation_range=10, delete_joints=True):
+        self.instances = {}
         self.breed_name = breed_name
         self.pole_name = "pole"
         self.plant_height = plant_height
@@ -30,29 +31,57 @@ class Breed(object):
         self.delete_joints = delete_joints
 
         print("Cleaning old plants leftovers...")
-        clear_plant_leftovers()
+        clear_all_breeds_leftovers()
 
         self.cones_height = self.plant_height * 0.9
         self.height_step = self.cones_height / self.cones_num
         self.xz_step = self.cones_to_complete_circle / 1.0
         self.joint_height_step = float(self.plant_height) / self.jnts_num
 
-    def draw_breed_instance(self, instance_name=""):
+    # ======================================================================
+    #                             PRIVATE METHODS
+    # ======================================================================
+    def _assert_prequisites_completed(self, instance_name, stage):
+        """
+        use this to make sure you are creating partsa of the plant in the proper order.
+        for example, you cant create the cones without creating the stem.
+        :param instance_name: name of an instance you created (using <some Breed>.draw_breed_instance)
+        :param stage: a stage in the creation process. one of <stages> defined inside this function
+        """
+        stages = ['stem', 'cones', 'mtl', 'joints', 'done']
+        assert stage in stages
+        stage_idx = stages.index(stage)
+        for stage in stages[:stage_idx]:
+            assert self.instances[instance_name]['creation_steps_completed'][stage]
+
+    def _mark_stage_completed(self, instance_name, stage):
+        """
+        use this to mark that one of the creation stages is completed.
+        :param instance_name: name of an instance you created (using <some Breed>.draw_breed_instance)
+        :param stage: a stage in the creation process. one of <stages> defined inside this function
+        :return:
+        """
+        stages = ['stem', 'cones', 'mtl', 'joints', 'done']
+        assert stage in stages
+        self.instances[instance_name]['creation_steps_completed'][stage] = True
+
+    def _create_instance_pole(self, instance_name):
         # Create pole
-        print("Creating stem...")
         c = pm.polyCylinder(
             name=self.pole_name, height=self.plant_height, radius=self.pole_radius, subdivisionsHeight=20)
         pm.move(self.pole_name, [0, self.plant_height / 2.0, 0])
+        self._mark_stage_completed(instance_name, "stem")
+        return c
 
-        print("Adding cones...")
+    def _create_instance_cones(self, instance_name):
+        self._assert_prequisites_completed(instance_name, "cones")
+
         for i in range(self.cones_num):
-
             # try omitting cone
             spawn_chance = (i / float(self.cones_num)) * random.uniform(0.9, 0.999)
             should_drop = random.random() < spawn_chance
             if should_drop:
                 continue
-
             cone_name = "cone_%d" % i
 
             # position & rotation
@@ -75,26 +104,33 @@ class Breed(object):
                                name=cone_name)
 
             pm.move(cone_name, [x, y, z])
-            pm.rotate(cone_name, [90, 0, 0])
+            pm.rotate(cone_name, [90, 0, 90])
+        self._mark_stage_completed(instance_name, "cones")
 
-        # assign plant material
+    def _assign_instance_material(self, instance_name):
+        self._assert_prequisites_completed(instance_name, "mtl")
+
         plant = pm.polyUnite("cone_*", "pole", n="plant")
+        self.instances[instance_name]['mesh'] = plant
         assign_mtl_from_resources(["plant"], MTL_NAME)
         pm.delete(plant, constructionHistory=True)
 
-        print("Creating joints & skin...")
+        self._mark_stage_completed(instance_name, "mtl")
+
+    def _create_instance_joints(self, instance_name):
+        self._assert_prequisites_completed(instance_name, "joints")
+
         pm.select(deselect=True)
         for i in range(self.jnts_num):
-            jnt_name = 'plant_jnt_%s' % str(i)
+            jnt_name = '%s_%s_jnt_%s' % (self.breed_name, instance_name, str(i))
             jnt_position = [0, i * self.joint_height_step, 0]
             jnt = pm.joint(name=jnt_name, position=jnt_position, zso=True, oj='xyz')
-
-        pm.select("plant_jnt*")
+            self.instances[instance_name]['jnts'] += [jnt]
+        pm.select("%s_%s_jnt_*" % (self.breed_name, instance_name))
         pm.select("plant", add=True)
         pm.bindSkin()
-
         for i in range(self.jnts_num):
-            jnt_name = 'plant_jnt_%s' % str(i)
+            jnt_name = '%s_%s_jnt_%s' % (self.breed_name, instance_name, str(i))
             most_likely_rotation = mapFromTo(i, 0, self.jnts_num, self.min_rotation, self.max_rotation)
             rot_x = np.random.normal(most_likely_rotation, self.rotation_range)
             rot_y = np.random.normal(most_likely_rotation, self.rotation_range)
@@ -102,17 +138,81 @@ class Breed(object):
             rotation = [rot_x, rot_y, rot_z]
             pm.rotate(jnt_name, rotation)
 
-        print("Finishing up...")
         if self.delete_joints:
             pm.delete("plant", constructionHistory=True)
             try_deleting("plant_jnt_*")
+
+        self._mark_stage_completed(instance_name, "joints")
+
+    @staticmethod
+    def _get_new_instance_dict():
+        return {
+            'mesh': None,
+            'jnts': [],
+            'creation_steps_completed': {
+                'stem': False,
+                'cones': False,
+                'mtl': False,
+                'joints': False,
+                'done': False
+            }
+        }
+
+    # ======================================================================
+    #                          PUBLIC METHODS
+    # ======================================================================
+    def draw_breed_instance(self, instance_name=""):
+
+        self.clear_instance_leftovers(instance_name)
+        self.instances[instance_name] = self._get_new_instance_dict()
+
+        print("Creating stem...")
+        c = self._create_instance_pole(instance_name)
+
+        print("Adding cones...")
+        self._create_instance_cones(instance_name)
+
+        # assign plant material
+        print("Assigning material...")
+        self._assign_instance_material(instance_name)
+
+        print("Creating joints & skin...")
+        self._create_instance_joints(instance_name)
+
+        print("Finishing up...")
         full_instance_name = "%s_%s" % (self.breed_name, instance_name)
         pm.rename("plant", full_instance_name)
+
+        self._mark_stage_completed(instance_name, "done")
+
         print("%s Created!" % full_instance_name)
 
+    def clear_all_breed_leftovers(self):
+        """
+        delete mesh and joints from all instances
+        """
+        for instance_name in self.instances:
+            self.clear_instance_leftovers(instance_name)
 
-def clear_plant_leftovers():
-    try_deleting(["pole*", "cone_*", "plant", "pole", "plant_jnt_*"])
+    def clear_instance_leftovers(self, instance_name):
+        """
+        delete all leftovers from specific insrtance
+        :param instance_name:
+        """
+        if instance_name not in self.instances:
+            return
+        jnts = self.intances[instance_name]['jnts']
+        mesh = self.instances[instance_name]['mesh']
+        pm.delete(mesh)
+        for jnt in jnts:
+            pm.delete(jnt)
+
+
+# ======================================================================
+#                       PUBLIC STATIC METHODS
+# ======================================================================
+def clear_all_breeds_leftovers():
+    try_deleting(["pole*", "cone_*", "plant", "pole"])
 
 
 def create_sample_breed_and_draw_multiple_instances(breed_name="spikey", n=2):
