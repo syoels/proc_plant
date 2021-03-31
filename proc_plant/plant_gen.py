@@ -6,7 +6,7 @@ import numpy as np
 from proc_plant.math_utils import mapFromTo
 from consts import MTL_NAME
 from proc_plant.maya_utils import try_deleting, assign_mtl_from_resources
-
+from proc_plant.math_utils import angle
 
 class Breed(object):
     
@@ -90,6 +90,8 @@ class Breed(object):
             x = math.sin(xz_index * self.xz_step) * self.pole_radius
             z = math.cos(xz_index * self.xz_step) * self.pole_radius
             y = cone_height + (random.random() - 0.5) / 2.0
+            x_rot = angle(x, y, z)
+
 
             # random radius & ratio
             height = random.uniform(self.min_height, self.max_height)
@@ -104,7 +106,7 @@ class Breed(object):
                                name=cone_name)
 
             pm.move(cone_name, [x, y, z])
-            pm.rotate(cone_name, [0, 0, 0])
+            pm.rotate(cone_name, [x_rot, 0, 0])
         self._mark_stage_completed(instance_name, "cones")
 
     def _assign_instance_material(self, instance_name):

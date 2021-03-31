@@ -1,3 +1,5 @@
+import numpy as np
+
 
 def mapFromTo(x, a, b, c, d):
     """
@@ -11,3 +13,11 @@ def mapFromTo(x, a, b, c, d):
     """
     y = (x - a) / float((b - a)) * (d - c) + c
     return y
+
+
+def angle(b, c, z):
+    """
+    https://stackoverflow.com/questions/62016425/how-to-calculate-the-rotation-angles-needed-on-x-and-z-to-align-two-vectors
+    :return: angle to vector
+    """
+    return np.arccos(z / np.sqrt(b ** 2 + c ** 2)) - np.arctan2(-b, c)
