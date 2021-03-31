@@ -6,7 +6,7 @@ import numpy as np
 from proc_plant.math_utils import mapFromTo
 from consts import MTL_NAME
 from proc_plant.maya_utils import try_deleting, assign_mtl_from_resources
-from proc_plant.math_utils import angle
+from proc_plant.math_utils import angle_vect2d
 
 class Breed(object):
     
@@ -76,6 +76,7 @@ class Breed(object):
     def _create_instance_cones(self, instance_name):
         self._assert_prequisites_completed(instance_name, "cones")
 
+        xz_angle_step_rad = (2 * np.pi) / self.cones_to_complete_circle
         for i in range(self.cones_num):
             # try omitting cone
             spawn_chance = (i / float(self.cones_num)) * random.uniform(0.9, 0.999)
@@ -87,11 +88,12 @@ class Breed(object):
             # position & rotation
             cone_height = i * self.height_step
             xz_index = i % self.cones_to_complete_circle
-            x = math.sin(xz_index * self.xz_step) * self.pole_radius
-            z = math.cos(xz_index * self.xz_step) * self.pole_radius
-            y = cone_height + (random.random() - 0.5) / 2.0
-            x_rot = angle(x, y, z)
+            xz_angle = xz_index * xz_angle_step_rad
 
+            x = math.sin(xz_angle) * self.pole_radius
+            z = math.cos(xz_angle) * self.pole_radius
+            y = cone_height + (random.random() - 0.5) / 2.0
+            y_rot = angle_vect2d([x, z])
 
             # random radius & ratio
             height = random.uniform(self.min_height, self.max_height)
@@ -106,7 +108,7 @@ class Breed(object):
                                name=cone_name)
 
             pm.move(cone_name, [x, y, z])
-            pm.rotate(cone_name, [x_rot, 0, 0])
+            pm.rotate(cone_name, [90, y_rot, 0])
         self._mark_stage_completed(instance_name, "cones")
 
     def _assign_instance_material(self, instance_name):
@@ -131,8 +133,9 @@ class Breed(object):
         pm.select("%s_%s_jnt_*" % (self.breed_name, instance_name))
         pm.select("plant", add=True)
         pm.bindSkin()
+        jnt_name_prefix = '%s_%s_jnt' % (self.breed_name, instance_name)
         for i in range(self.jnts_num):
-            jnt_name = '%s_%s_jnt_%s' % (self.breed_name, instance_name, str(i))
+            jnt_name = '%s_%s' % (jnt_name_prefix, str(i))
             most_likely_rotation = mapFromTo(i, 0, self.jnts_num, self.min_rotation, self.max_rotation)
             rot_x = np.random.normal(most_likely_rotation, self.rotation_range)
             rot_y = np.random.normal(most_likely_rotation, self.rotation_range)
@@ -142,7 +145,7 @@ class Breed(object):
 
         if self.delete_joints:
             pm.delete("plant", constructionHistory=True)
-            try_deleting("plant_jnt_*")
+            try_deleting(jnt_name_prefix + '*')
 
         self._mark_stage_completed(instance_name, "joints")
 
@@ -226,19 +229,21 @@ def create_sample_breed_and_draw_multiple_instances(breed_name="spikey", n=2):
 
 
 def get_sample_breed_kwargs():
+    print(1111)
     return {
         'breed_name': 'sample_breed',
-        'plant_height': np.random.normal(150, 50),
+        'plant_height': np.random.normal(120, 20),
         'pole_radius': np.random.normal(1.2, 0.25),
-        'cones_num': int(np.random.normal(800, 100)),
+        'cones_num': int(np.random.normal(500, 100)),
         'cones_to_complete_circle': int(np.random.normal(120, 20)),
-        'jnts_num': int(np.random.normal(150, 50) // 2),
+        'jnts_num': int(np.random.normal(80, 20) // 2),
         'min_height': np.random.normal(1.5, 1.0),
         'max_height': np.random.normal(7, 4.0),
         'min_radius': np.random.normal(0.4, 0.1),
         'max_radius': np.random.normal(0.7, 0.1),
-        'min_rotation': np.random.normal(0.0, 10.0),
-        'max_rotation': np.random.normal(25.0, 1.0),
-        'rotation_range': max(np.random.normal(15.0, 10.0), 0)
+        'min_rotation': np.random.normal(0.0, 3.0),
+        'max_rotation': np.random.normal(15.0, 1.0),
+        'rotation_range': max(np.random.normal(10.0, 4.0), 0),
+        'delete_joints': False
     }
 

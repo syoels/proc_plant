@@ -1,4 +1,4 @@
-import numpy as np
+import math
 
 
 def mapFromTo(x, a, b, c, d):
@@ -15,9 +15,11 @@ def mapFromTo(x, a, b, c, d):
     return y
 
 
-def angle(b, c, z):
+def angle_vect2d(vect_2d_xz):
     """
-    https://stackoverflow.com/questions/62016425/how-to-calculate-the-rotation-angles-needed-on-x-and-z-to-align-two-vectors
-    :return: angle to vector
+    :param vect_2d_xz: 2d vector [x, z]
+    :return: angles in degrees to orient outwards
     """
-    return np.arccos(z / np.sqrt(b ** 2 + c ** 2)) - np.arctan2(-b, c)
+    x = vect_2d_xz[0]
+    z = vect_2d_xz[1]
+    return math.degrees(math.atan2(x, z))
