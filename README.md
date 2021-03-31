@@ -9,4 +9,4 @@ Resources:
 * https://matiascodesal.com/blog/how-to-use-pycharms-remote-debugging-with-maya/
 * https://www.youtube.com/watch?v=BwCeffC96uA
 
-![My current procedural plant](https://user-images.githubusercontent.com/11814672/109854115-53869b80-7c5f-11eb-9b2e-12f78b6beff6.png)
+![My current procedural plant](https://user-images.githubusercontent.com/11814672/113218994-33132680-9289-11eb-9711-991326bd9fe4.jpeg)
