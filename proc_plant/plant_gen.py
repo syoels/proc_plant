@@ -94,9 +94,9 @@ class Breed(object):
             xz_index = i % self.cones_to_complete_circle
             xz_angle = xz_index * xz_angle_step_rad
 
-            x = math.sin(xz_angle) * (self.pole_radius + height / 3.0)
-            z = math.cos(xz_angle) * (self.pole_radius + height / 3.0)
-            y = cone_height + (random.random() - 0.5) / 2.0
+            x = math.sin(xz_angle) * (self.pole_radius + height / 5.0)
+            z = math.cos(xz_angle) * (self.pole_radius + height / 5.0)
+            y = cone_height + (random.random() - 0.5) * 2.0
             y_rot = angle_vect2d([x, z])
 
             # spawn cone and move/rotate
