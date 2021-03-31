@@ -48,7 +48,7 @@ def assign_mtl_from_resources(obj_names, mtl_name, include_displacement=True, di
 
     print("Assigning shader...")
     for selection_string in obj_names:
-        for obj in pm.ls(selection_string):
+        for obj in pm.ls(selection_string, type='transform'):
             name = obj.name()
             plant_sg_name = mtl.shadingGroups()[0].name()
             mc.sets(name, e=True, forceElement=plant_sg_name)

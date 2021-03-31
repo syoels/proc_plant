@@ -4,7 +4,8 @@ import math
 import numpy as np
 
 from proc_plant.math_utils import mapFromTo
-from consts import STEM_MTL_NAME, SPIKES_MTL_NAME, SUBDIV_LINEAR
+from consts import STEM_MTL_NAME, SPIKES_MTL_NAME, SUBDIV_LINEAR, \
+    BIND_METHOD_CLOSEST_CONSIDER_SKELETON, SKIN_METHOD_DUAL_QUATERNION
 from proc_plant.maya_utils import try_deleting, assign_mtl_from_resources
 from proc_plant.math_utils import angle_vect2d
 
@@ -79,7 +80,7 @@ class Breed(object):
         xz_angle_step_rad = (2 * np.pi) / self.cones_to_complete_circle
         for i in range(self.cones_num):
             # try omitting cone
-            spawn_chance = (i / float(self.cones_num)) * random.uniform(0.9, 0.999)
+            spawn_chance = (i / float(self.cones_num)) * random.uniform(0.9, 0.99)
             should_drop = random.random() < spawn_chance
             if should_drop:
                 continue
@@ -93,8 +94,8 @@ class Breed(object):
             xz_index = i % self.cones_to_complete_circle
             xz_angle = xz_index * xz_angle_step_rad
 
-            x = math.sin(xz_angle) * (self.pole_radius + height / 2.0)
-            z = math.cos(xz_angle) * (self.pole_radius + height / 2.0)
+            x = math.sin(xz_angle) * (self.pole_radius + height / 3.0)
+            z = math.cos(xz_angle) * (self.pole_radius + height / 3.0)
             y = cone_height + (random.random() - 0.5) / 2.0
             y_rot = angle_vect2d([x, z])
 
@@ -114,7 +115,7 @@ class Breed(object):
         self._assert_prequisites_completed(instance_name, "mtl")
 
         assign_mtl_from_resources(["pole"], STEM_MTL_NAME)
-        assign_mtl_from_resources(["cone"], SPIKES_MTL_NAME, displacement_kw={'subdiv_type': SUBDIV_LINEAR})
+        assign_mtl_from_resources(["cone_*"], SPIKES_MTL_NAME, displacement_kw={'subdiv_type': SUBDIV_LINEAR})
         plant = pm.polyUnite("cone_*", "pole", n="plant")
         self.instances[instance_name]['mesh'] = plant
         pm.delete(plant, constructionHistory=True)
@@ -125,14 +126,21 @@ class Breed(object):
         self._assert_prequisites_completed(instance_name, "joints")
 
         pm.select(deselect=True)
+        jnt_prefix = '%s_%s_jnt' % (self.breed_name, instance_name)
         for i in range(self.jnts_num):
-            jnt_name = '%s_%s_jnt_%s' % (self.breed_name, instance_name, str(i))
+            jnt_name = '%s_%s' % (jnt_prefix, str(i))
             jnt_position = [0, i * self.joint_height_step, 0]
             jnt = pm.joint(name=jnt_name, position=jnt_position, zso=True, oj='xyz')
             self.instances[instance_name]['jnts'] += [jnt]
         pm.select("%s_%s_jnt_*" % (self.breed_name, instance_name))
         pm.select("plant", add=True)
-        pm.bindSkin()
+        # pm.bindSkin()
+
+        pm.skinCluster(tsb=True,
+                       bindMethod=BIND_METHOD_CLOSEST_CONSIDER_SKELETON, heatmapFalloff=0.64,
+                       skinMethod=SKIN_METHOD_DUAL_QUATERNION,
+                       smoothWeights=0.5)
+
         jnt_name_prefix = '%s_%s_jnt' % (self.breed_name, instance_name)
         for i in range(self.jnts_num):
             jnt_name = '%s_%s' % (jnt_name_prefix, str(i))
@@ -142,6 +150,7 @@ class Breed(object):
             rot_z = np.random.normal(most_likely_rotation, self.rotation_range)
             rotation = [rot_x, rot_y, rot_z]
             pm.rotate(jnt_name, rotation)
+
 
         if self.delete_joints:
             pm.delete("plant", constructionHistory=True)
@@ -235,11 +244,11 @@ def get_sample_breed_kwargs():
         'pole_radius': np.random.normal(1.2, 0.25),
         'cones_num': int(np.random.normal(500, 100)),
         'cones_to_complete_circle': int(np.random.normal(120, 20)),
-        'jnts_num': int(np.random.normal(80, 20) // 2),
+        'jnts_num': 60,
         'min_height': np.random.normal(1.5, 1.0),
-        'max_height': np.random.normal(7, 4.0),
-        'min_radius': np.random.normal(0.4, 0.1),
-        'max_radius': np.random.normal(0.7, 0.1),
+        'max_height': np.random.normal(4, 1.0),
+        'min_radius': np.random.normal(0.3, 0.1),
+        'max_radius': np.random.normal(0.5, 0.1),
         'min_rotation': np.random.normal(0.0, 3.0),
         'max_rotation': np.random.normal(15.0, 1.0),
         'rotation_range': max(np.random.normal(10.0, 4.0), 0),

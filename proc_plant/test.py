@@ -10,7 +10,7 @@ def test(with_pycharm_debug_socket=False):
 
     b = Breed("my_cool_breed")
     b.draw_breed_instance(instance_name=1)
-    create_sample_breed_and_draw_multiple_instances(breed_name="another_breed", n=2)
+    create_sample_breed_and_draw_multiple_instances(breed_name="another_breed", n=4)
 
 
 def test_short(with_pycharm_debug_socket=False):
