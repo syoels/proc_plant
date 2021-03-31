@@ -4,7 +4,7 @@ import math
 import numpy as np
 
 from proc_plant.math_utils import mapFromTo
-from consts import MTL_NAME
+from consts import STEM_MTL_NAME, SPIKES_MTL_NAME, SUBDIV_LINEAR
 from proc_plant.maya_utils import try_deleting, assign_mtl_from_resources
 from proc_plant.math_utils import angle_vect2d
 
@@ -84,20 +84,19 @@ class Breed(object):
             if should_drop:
                 continue
             cone_name = "cone_%d" % i
+            # random radius & ratio
+            height = random.uniform(self.min_height, self.max_height)
+            radius = random.uniform(self.min_radius, self.max_radius)
 
             # position & rotation
             cone_height = i * self.height_step
             xz_index = i % self.cones_to_complete_circle
             xz_angle = xz_index * xz_angle_step_rad
 
-            x = math.sin(xz_angle) * self.pole_radius
-            z = math.cos(xz_angle) * self.pole_radius
+            x = math.sin(xz_angle) * (self.pole_radius + height / 2.0)
+            z = math.cos(xz_angle) * (self.pole_radius + height / 2.0)
             y = cone_height + (random.random() - 0.5) / 2.0
             y_rot = angle_vect2d([x, z])
-
-            # random radius & ratio
-            height = random.uniform(self.min_height, self.max_height)
-            radius = random.uniform(self.min_radius, self.max_radius)
 
             # spawn cone and move/rotate
             cone = pm.polyCone(constructionHistory=True,
@@ -114,7 +113,8 @@ class Breed(object):
     def _assign_instance_material(self, instance_name):
         self._assert_prequisites_completed(instance_name, "mtl")
 
-        assign_mtl_from_resources(["pole"], MTL_NAME)
+        assign_mtl_from_resources(["pole"], STEM_MTL_NAME)
+        assign_mtl_from_resources(["cone"], SPIKES_MTL_NAME, displacement_kw={'subdiv_type': SUBDIV_LINEAR})
         plant = pm.polyUnite("cone_*", "pole", n="plant")
         self.instances[instance_name]['mesh'] = plant
         pm.delete(plant, constructionHistory=True)
@@ -229,7 +229,6 @@ def create_sample_breed_and_draw_multiple_instances(breed_name="spikey", n=2):
 
 
 def get_sample_breed_kwargs():
-    print(1111)
     return {
         'breed_name': 'sample_breed',
         'plant_height': np.random.normal(120, 20),

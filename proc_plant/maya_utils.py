@@ -2,7 +2,7 @@ import os
 import pymel.core as pm
 import maya.cmds as mc
 from proc_plant.general_utils import get_project_root_dir
-from proc_plant.consts import MTL_NS, SUBDIV_CATCLARK
+from proc_plant.consts import MTL_NS, TMP_NS, SUBDIV_CATCLARK
 
 
 def try_deleting(name):
@@ -28,7 +28,7 @@ def try_deleting(name):
         return False
 
 
-def assign_mtl_from_resources(obj_names, mtl_name, include_displacement=True):
+def assign_mtl_from_resources(obj_names, mtl_name, include_displacement=True, displacement_kw={}):
     if "." in mtl_name:
         mtl_name = mtl_name.split(".")[-2]
 
@@ -38,7 +38,11 @@ def assign_mtl_from_resources(obj_names, mtl_name, include_displacement=True):
         base_dir = get_project_root_dir()
         mtl_path = os.path.join(base_dir, "resources", "%s.ma" % mtl_name)
         print('loading mtl from %s' % mtl_path)
-        pm.importFile(mtl_path, namespace=MTL_NS)
+        pm.importFile(mtl_path, namespace=TMP_NS)
+        if not pm.system.namespace(exists=MTL_NS):
+            pm.system.namespace(addNamespace=MTL_NS)
+        mc.namespace(force=True, mv=(':'+TMP_NS, ':'+MTL_NS))
+        pm.namespace(removeNamespace=TMP_NS, mergeNamespaceWithRoot=True)
 
     mtl = pm.PyNode(mtl_full_name)
 
@@ -49,7 +53,7 @@ def assign_mtl_from_resources(obj_names, mtl_name, include_displacement=True):
             plant_sg_name = mtl.shadingGroups()[0].name()
             mc.sets(name, e=True, forceElement=plant_sg_name)
             if include_displacement:
-                set_arnold_displacement_attrs(name)
+                set_arnold_displacement_attrs(name, **displacement_kw)
 
 
 def set_arnold_displacement_attrs(obj_name, subdiv_type=SUBDIV_CATCLARK, ai_subdiv_iterations=3, should_auto_bump=True):
