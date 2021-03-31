@@ -130,12 +130,12 @@ class Breed(object):
         for i in range(self.jnts_num):
             jnt_name = '%s_%s' % (jnt_prefix, str(i))
             jnt_position = [0, i * self.joint_height_step, 0]
-            jnt = pm.joint(name=jnt_name, position=jnt_position, zso=True, oj='xyz')
+            jnt = pm.joint(name=jnt_name, position=jnt_position)
             self.instances[instance_name]['jnts'] += [jnt]
         pm.select("%s_%s_jnt_*" % (self.breed_name, instance_name))
         pm.select("plant", add=True)
-        # pm.bindSkin()
 
+        # pm.bindSkin()
         pm.skinCluster(tsb=True,
                        bindMethod=BIND_METHOD_CLOSEST_CONSIDER_SKELETON, heatmapFalloff=0.64,
                        skinMethod=SKIN_METHOD_DUAL_QUATERNION,
@@ -150,6 +150,10 @@ class Breed(object):
             rot_z = np.random.normal(most_likely_rotation, self.rotation_range)
             rotation = [rot_x, rot_y, rot_z]
             pm.rotate(jnt_name, rotation)
+
+            # smaller towards edge
+            if i > 0.75 * self.jnts_num:
+                pm.scale(jnt_name, [0.2, 0.2, 0.2])
 
 
         if self.delete_joints:
